@@ -19,6 +19,7 @@ define(function(require, exports, module) {
 		var FlexibleLayout = require("famous/views/FlexibleLayout");
 		var Easing = require('famous/transitions/Easing');
 		var Lightbox = require('famous/views/Lightbox');
+		var RenderController = require('famous/views/RenderController');
 		var Timer = require('famous/utilities/Timer');
 	/****End Loading Files****/
 	
@@ -36,10 +37,11 @@ define(function(require, exports, module) {
 		var GLOBAL = {
 			HEADER_HEIGHT : Math.min(80,HEIGHT/7),
 			THEME_COLOR: "#627699",
+			FONT_COLOR_WEEKEND: "rgba(0,0,0,0.8)",
 			DAY_CAL_TAGS_HEIGHT:20,
 			DAY_CAL_TITLE_HEIGHT:60,
 			STYLE :{
-				fontFamily:" '黑体' ,'Open Sans', sans-serif",
+				fontFamily:" '黑体' ,'Open Sans', sans-serif, 'Rome Time'",
 				// backgroundColor:"black"
 			},
 			MARGIN : {
@@ -52,11 +54,11 @@ define(function(require, exports, module) {
 			},
 			LIGHTBOX_OPTIONS:{
 				inOpacity: 1,
-				outOpacity: 1,
+				outOpacity: 0,
 				inTransform: Transform.translate(320,0, 0),
-				outTransform: Transform.translate(-320, 0, 1),
-				inTransition: { duration: 400, curve: Easing.outBack },
-				outTransition: { duration: 150, curve: Easing.easeOut }
+  			outTransform: Transform.translate(-320, 0, 1),
+				inTransition: { duration: 400, curve: Easing.easeIn },
+				outTransition: { duration: 400, curve: Easing.easeOut }
 			}
 		}
 
@@ -87,6 +89,7 @@ define(function(require, exports, module) {
 				textAlign: "center",
 				fontSize:FONT_INDEX/2+"px"
 			},
+
 			'headerBgSurface':{
 				backgroundColor:GLOBAL.THEME_COLOR
 			},
@@ -149,11 +152,23 @@ define(function(require, exports, module) {
 
 			layout.header.add(createHeader());
 
-			var lightbox = new Lightbox();
-			layout.content.add(lightbox);
+			var renderController = new RenderController({
+				inTransition: { duration: 0, curve: Easing.outBack },
+				outTransition: { duration: 0, curve: Easing.easeOut }
+			});
+			layout.content.add(renderController);
+			renderController.show(createMonthCal(NOW));
 
-			//testing
-			Timer.after(function(){lightbox.show(createMonthCal(NOW))},60);
+			// var lightbox = new Lightbox();
+			// layout.content.add(lightbox);
+
+			// //testing
+			// lightbox.setOptions({				
+			// 	inTransition: { duration: 0, curve: Easing.outBack },
+			// 	outTransition: { duration: 0, curve: Easing.easeOut }
+			// });
+			// lightbox.show(createMonthCal(NOW));
+			
 
 	/**** END MAIN LAYOUT ****/
 
@@ -218,46 +233,37 @@ define(function(require, exports, module) {
 
 
 		for (var i = 0; i < 15; i++){
-			var box = new ContainerSurface();
-			//add bg
-				// switch (i % 3){
-				// 	case 0:
-				// 		var boxBGModifier = new Modifier({
-				// 			size:[boxWidth - GLOBAL.MARGIN.MONTH_BOX.LEFT,boxHeight],
-				// 			origin:[1,0]
-				// 		});
+			var box = new ContainerSurface({
+				properties:(i < 12) ? STYLES['monthBoxBG'] : {}
+			});
 
-				// 	break;
-				// 	case 1:
-				// 		var boxBGModifier = new Modifier({});
+				switch (i % 3){
+					case 0:
+						var boxBGModifier = new Modifier({
+							size:[GLOBAL.MARGIN.MONTH_BOX.LEFT,boxHeight+5],
+							origin:[0,0]
+						});
 
-				// 	break;
-				// 	case 2:
-				// 		var boxBGModifier = new Modifier({
-				// 			size:[boxWidth - GLOBAL.MARGIN.MONTH_BOX.RIGHT,boxHeight],
-				// 			origin:[0,1]
-				// 		});
-				// 	break;
-				// }
+						var boxBG = new Surface({
+							properties:{backgroundColor:"white"}
+						});
 
-				// var boxBG = new Surface({
-				// 	properties:(i < 12) ? STYLES['monthBoxBG'] : {}
-				// });
+						box.add(MODIFIERS.BG).add(boxBGModifier).add(boxBG);
 
-				// box.add(MODIFIERS.BG).add(boxBGModifier).add(boxBG);
+					break;
+					case 2:
+						var boxBGModifier = new Modifier({
+							size:[GLOBAL.MARGIN.MONTH_BOX.RIGHT,boxHeight+5],
+							origin:[1,0]
+						});
 
-			switch(i % 3){
-				case 0:
+						var boxBG = new Surface({
+							properties:{backgroundColor:"white"}
+						});
 
-				break;
-				case 1:
-
-				break;
-				case 2:
-
-				break;
-			}
-
+						box.add(MODIFIERS.BG).add(boxBGModifier).add(boxBG);
+					break;
+				}
 			//add content
 			var boxSize = Math.min(boxHeight - GLOBAL.MARGIN.MONTH_BOX.TOP, boxWidth - GLOBAL.MARGIN.MONTH_BOX.LEFT);
 			STYLES['monthBox'].lineHeight = boxSize+"px";
@@ -318,7 +324,14 @@ define(function(require, exports, module) {
 
 				//set event
 				box.on("click",function(){
-					lightbox.show(createDayCal(this.timeStamp));
+					// lightbox.setOptions(GLOBAL.LIGHTBOX_OPTIONS);
+					// lightbox.show(createDayCal(this.timeStamp));
+
+					renderController.setOptions({				
+						inTransition: { duration: 300, curve: Easing.outBack },
+						outTransition: { duration: 300, curve: Easing.easeOut }
+					});
+					renderController.show(createDayCal(this.timeStamp));
 				});
 			}
 
@@ -362,7 +375,8 @@ define(function(require, exports, module) {
 				content:timeStamp.getFullYear() + "年" + (timeStamp.getMonth() + 1) + "月",
 				properties:{
 					lineHeight:GLOBAL.DAY_CAL_TITLE_HEIGHT+"px",
-					textAlign:"center"
+					textAlign:"center",
+					color:GLOBAL.THEME_COLOR
 				}
 			});
 
